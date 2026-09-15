@@ -107,3 +107,9 @@ li button {
 	font-weight: bold;
 	text-align: right;
 }
+
+nav {
+	display: flex;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
