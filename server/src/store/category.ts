@@ -1,46 +1,47 @@
-import { randomUUID } from "node:crypto";
+import { pool } from "../db/pool.js";
 import type { Category, NewCategory } from "../types/category.js";
 
-const categories: Category[] = [
-	{ id: randomUUID(), name: "Groceries" },
-	{ id: randomUUID(), name: "Transport" },
-];
+export async function getCategories(): Promise<Category[]> {
+    const { rows } = await pool.query(
+        "SELECT id, name FROM categories ORDER BY name",
+    );
 
-export function getCategories(): Category[] {
-	return categories;
+    return rows;
 }
 
-export function addCategory(newCategory: NewCategory): Category {
-	const category: Category = {
-		id: randomUUID(),
-		...newCategory,
-	};
+export async function addCategory(
+    newCategory: NewCategory,
+): Promise<Category> {
+    const { rows } = await pool.query(
+        `INSERT INTO categories (name)
+         VALUES ($1)
+         RETURNING id, name`,
+        [newCategory.name],
+    );
 
-	categories.push(category);
-	return category;
+    return rows[0];
 }
 
-export function updateCategory(
-	id: string,
-	update: NewCategory,
-): Category | null {
-	const category = categories.find((category) => category.id === id);
+export async function updateCategory(
+    id: string,
+    update: NewCategory,
+): Promise<Category | null> {
+    const { rows } = await pool.query(
+        `UPDATE categories
+         SET name = $1
+         WHERE id = $2
+         RETURNING id, name`,
+        [update.name, id],
+    );
 
-	if (!category) {
-		return null;
-	}
-
-	Object.assign(category, update);
-	return category;
+    return rows[0] ?? null;
 }
 
-export function deleteCategory(id: string): boolean {
-	const index = categories.findIndex((category) => category.id === id);
+export async function deleteCategory(id: string): Promise<boolean> {
+    const { rowCount } = await pool.query(
+        "DELETE FROM categories WHERE id = $1",
+        [id],
+    );
 
-	if (index === -1) {
-		return false;
-	}
-
-	categories.splice(index, 1);
-	return true;
+    return rowCount !== null && rowCount > 0;
 }

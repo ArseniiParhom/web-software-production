@@ -22,11 +22,11 @@ function parseNewCategory(body: unknown): NewCategory | null {
 
 export const categoryRouter = Router();
 
-categoryRouter.get("/", (_req, res) => {
-	res.json(getCategories());
+categoryRouter.get("/", async (_req, res) => {
+	res.json(await getCategories());
 });
 
-categoryRouter.post("/", (req, res) => {
+categoryRouter.post("/", async (req, res) => {
 	const category = parseNewCategory(req.body);
 
 	if (!category) {
@@ -34,11 +34,11 @@ categoryRouter.post("/", (req, res) => {
 		return;
 	}
 
-	const createdCategory = addCategory(category);
+	const createdCategory = await addCategory(category);
 	res.status(201).json(createdCategory);
 });
 
-categoryRouter.put("/:id", (req, res) => {
+categoryRouter.put("/:id", async (req, res) => {
 	const category = parseNewCategory(req.body);
 
 	if (!category) {
@@ -46,7 +46,7 @@ categoryRouter.put("/:id", (req, res) => {
 		return;
 	}
 
-	const updatedCategory = updateCategory(req.params.id, category);
+	const updatedCategory = await updateCategory(req.params.id, category);
 
 	if (!updatedCategory) {
 		res.status(404).json({ error: "Category not found" });
@@ -56,8 +56,8 @@ categoryRouter.put("/:id", (req, res) => {
 	res.json(updatedCategory);
 });
 
-categoryRouter.delete("/:id", (req, res) => {
-	const deleted = deleteCategory(req.params.id);
+categoryRouter.delete("/:id", async (req, res) => {
+	const deleted = await deleteCategory(req.params.id);
 
 	if (!deleted) {
 		res.status(404).json({ error: "Category not found" });
