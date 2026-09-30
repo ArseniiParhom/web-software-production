@@ -1,89 +1,204 @@
 # Expense Tracker
 
-Starting point for the Web Software Production course project. 
-This project will grow week by week.
+Course project for Web Software Production.
 
 - `client/` — React + Vite + TypeScript frontend
-- `server/` — Node + Express + TypeScript backend (in-memory storage)
+- `server/` — Node + Express + TypeScript backend
+- `db/` — PostgreSQL database initialization
 
-Each part is an independent npm project with its own `node_modules`, and its own Biome config for linting/formatting.
+Each part is an independent npm project with its own `node_modules` and Biome configuration.
 
 ## Running
 
-**Server** (http://localhost:3001):
+### Database
 
+The application uses PostgreSQL for persistent storage.
+
+Start the database from the project root:
+
+```bash
+docker compose up -d db
 ```
-cd server
+
+Check that it is running:
+
+```bash
+docker compose ps
+```
+
+The database schema is initialized from:
+
+```text
+db/init/001-schema.sql
+```
+
+### Server
+
+The server runs at:
+
+```text
+http://localhost:3001
+```
+
+From `server/`:
+
+```bash
 npm install
 npm run dev
 ```
 
-Starts the Express API with `tsx watch`, so it restarts on file changes. Once it's up you should see `Server listening on http://localhost:3001` in the terminal.
+The server reads its PostgreSQL connection settings from environment variables.
 
-```
+For local development, these are provided through `server/.env`.
+
+The `.env` file is git-ignored and must not be committed.
+
+The server structure includes:
+
+```text
 src/
-  app.ts                     # configures the Express app (middleware + routes)
-  server.ts                  # entry point: starts listening
-  types/expense.ts           # Expense / NewExpense types
-  store/expense.ts           # in-memory storage
-  routes/expense.ts          # GET/POST/PUT/DELETE handlers, mounted at /api/expenses
+  app.ts                     # configures the Express app
+  server.ts                  # starts the HTTP server
+  db/
+    pool.ts                  # PostgreSQL connection pool
+  types/
+    expense.ts
+    category.ts
+  store/
+    expense.ts               # PostgreSQL expense operations
+    category.ts              # PostgreSQL category operations
+  routes/
+    expense.ts               # expense API routes
+    category.ts              # category API routes
 ```
 
-Storage is in-memory only (see `server/src/store/expense.ts`) — data resets every time the server restarts, and it isn't shared across multiple server instances. There's no database yet.
+The application stores expenses and categories in PostgreSQL. Database access is handled through the connection pool in `src/db/pool.ts`, configured using environment variables.
 
-Available endpoints, all under `/api/expenses`:
+### Expense API
 
-| Method | Path             | Description                    |
-| ------ | ---------------- | ------------------------------ |
-| GET    | `/api/expenses`     | List all expenses           |
-| POST   | `/api/expenses`     | Create an expense           |
-| PUT    | `/api/expenses/:id` | Update an expense           |
-| DELETE | `/api/expenses/:id` | Delete an expense           |
+Available endpoints under `/api/expenses`:
 
-`POST`/`PUT` expect a JSON body with `description` (string), `amount` (number), and `date` (ISO string, e.g. `2026-08-01`); a missing/wrong-typed field returns `400`. Updating or deleting an unknown `id` returns `404`.
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/api/expenses` | List all expenses |
+| POST | `/api/expenses` | Create an expense |
+| PUT | `/api/expenses/:id` | Update an expense |
+| DELETE | `/api/expenses/:id` | Delete an expense |
 
-You can try it without the client, e.g.:
+`POST` and `PUT` expect a JSON body containing:
 
-```
+- `description` — string
+- `amount` — number
+- `date` — ISO date string, for example `2026-08-01`
+
+Invalid input returns `400`.
+
+Updating or deleting an unknown ID returns `404`.
+
+Example:
+
+```bash
 curl http://localhost:3001/api/expenses
 ```
 
-**Client** (http://localhost:5173):
+### Category API
 
+Available endpoints under `/api/categories`:
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/api/categories` | List all categories |
+| POST | `/api/categories` | Create a category |
+| PUT | `/api/categories/:id` | Update a category |
+| DELETE | `/api/categories/:id` | Delete a category |
+
+A category contains a `name` string.
+
+Invalid input returns `400`.
+
+Updating or deleting an unknown ID returns `404`.
+
+### Client
+
+The client development server runs at:
+
+```text
+http://localhost:5173
 ```
-cd client
+
+From `client/`:
+
+```bash
 npm install
 npm run dev
 ```
 
-Starts the Vite dev server with hot reload. The app calls the API directly at `http://localhost:3001`, so the server needs to be running too (see above) — without it you'll see a "Failed to fetch" error in the browser console.
+The Vite development server uses hot reload and communicates with the API at `http://localhost:3001`.
 
-The UI is split by responsibility rather than kept in one file:
+The UI is split by responsibility:
 
-```
+```text
 src/
-  types/expense.ts          # Expense / NewExpense types
-  api/expenses.ts           # the only place that calls fetch()
-  hooks/useExpenses.ts      # owns the expenses state, exposes add/edit/remove
-  utils/date.ts             # dd.mm.yyyy <-> ISO date conversion
-  utils/currency.ts         # € formatting
+  types/
+  api/
+  hooks/
+  utils/
   components/
-    ExpenseForm.tsx         # add-expense form
-    ExpenseList.tsx         # renders one ExpenseListItem per expense
-    ExpenseListItem.tsx     # a row; toggles its own view/edit mode
-    ExpenseTotal.tsx        # running total
-  App.tsx                   # composition root, no fetch/state logic itself
+  App.tsx
 ```
+
+## Testing
+
+The server contains both unit tests and integration tests.
+
+Unit tests cover pure application logic such as:
+
+- converting PostgreSQL expense data into API expense objects
+- validating expense request bodies
+- validating category request bodies
+
+Integration tests exercise the Express API against a real PostgreSQL database.
+
+Tests use a separate database:
+
+```text
+app_test_db
+```
+
+This keeps test operations separate from the development database.
+
+Before running the server tests, start PostgreSQL:
+
+```bash
+docker compose up -d db
+```
+
+Then, from `server/`:
+
+```bash
+npm test
+```
+
+Other available test commands:
+
+```bash
+npm run test:watch
+npm run test:coverage
+```
+
+The test database must contain the same schema as the development database.
 
 ## Linting
 
-[Biome](https://biomejs.dev/) handles both linting and formatting — there's no separate Prettier/ESLint setup. `client/` and `server/` each have their own `biome.json`, so they can drift independently as the course progresses; there's no shared/root config to keep in sync.
+[Biome](https://biomejs.dev/) handles linting and formatting.
+
+`client/` and `server/` each have their own `biome.json`.
 
 Run from inside either project:
 
-```
-npm run lint      # check formatting, imports, and lint rules
-npm run lint:fix  # same, but apply the fixes it can make automatically
+```bash
+npm run lint
+npm run lint:fix
 ```
 
-`lint:fix` won't touch anything it can't fix safely (e.g. an unused variable) — it'll still report those for you to fix by hand.
+`lint:fix` applies fixes that can be performed safely and reports remaining problems that require manual changes.
