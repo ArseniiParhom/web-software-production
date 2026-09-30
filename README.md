@@ -188,6 +188,17 @@ npm run test:coverage
 
 The test database must contain the same schema as the development database.
 
+### End-to-end tests
+
+The client contains end-to-end tests using Playwright.
+
+The E2E suite drives a real Chromium browser against the running application and tests the complete stack: client, server, and PostgreSQL database.
+
+Start the full application stack from the project root:
+
+```bash
+docker compose up -d
+
 ## Linting
 
 [Biome](https://biomejs.dev/) handles linting and formatting.
