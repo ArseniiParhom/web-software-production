@@ -35,13 +35,11 @@ describe("GET /api/expenses", () => {
 
 describe("POST /api/expenses", () => {
 	it("creates an expense and returns 201 with the created row", async () => {
-		const res = await request(app)
-			.post("/api/expenses")
-			.send({
-				description: "Coffee",
-				amount: 3.5,
-				date: "2026-08-10",
-			});
+		const res = await request(app).post("/api/expenses").send({
+			description: "Coffee",
+			amount: 3.5,
+			date: "2026-08-10",
+		});
 
 		expect(res.status).toBe(201);
 		expect(res.body).toMatchObject({
@@ -52,12 +50,10 @@ describe("POST /api/expenses", () => {
 	});
 
 	it("returns 400 when a required field is missing", async () => {
-		const res = await request(app)
-			.post("/api/expenses")
-			.send({
-				description: "Broken",
-				date: "2026-08-10",
-			});
+		const res = await request(app).post("/api/expenses").send({
+			description: "Broken",
+			date: "2026-08-10",
+		});
 
 		expect(res.status).toBe(400);
 	});

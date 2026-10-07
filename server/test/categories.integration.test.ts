@@ -44,9 +44,7 @@ describe("POST /api/categories", () => {
 	});
 
 	it("returns 400 when name is missing", async () => {
-		const res = await request(app)
-			.post("/api/categories")
-			.send({});
+		const res = await request(app).post("/api/categories").send({});
 
 		expect(res.status).toBe(400);
 	});
@@ -54,8 +52,9 @@ describe("POST /api/categories", () => {
 
 describe("DELETE /api/categories/:id", () => {
 	it("returns 404 for an id that does not exist", async () => {
-		const res = await request(app)
-			.delete("/api/categories/00000000-0000-0000-0000-000000000000");
+		const res = await request(app).delete(
+			"/api/categories/00000000-0000-0000-0000-000000000000",
+		);
 
 		expect(res.status).toBe(404);
 	});
