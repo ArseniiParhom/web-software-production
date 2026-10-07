@@ -12,9 +12,7 @@ test("a user can add and delete a category", async ({ page }) => {
 	await page.getByPlaceholder("Category name").fill(categoryName);
 	await page.getByRole("button", { name: "Add" }).click();
 
-	const row = page
-		.getByRole("listitem")
-		.filter({ hasText: categoryName });
+	const row = page.getByRole("listitem").filter({ hasText: categoryName });
 
 	await expect(row).toBeVisible();
 

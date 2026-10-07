@@ -11,9 +11,7 @@ test("a user can add, edit, and delete an expense", async ({ page }) => {
 	await page.getByPlaceholder("dd.mm.yyyy").fill("10.08.2026");
 	await page.getByRole("button", { name: "Add" }).click();
 
-	const row = page
-		.getByRole("listitem")
-		.filter({ hasText: description });
+	const row = page.getByRole("listitem").filter({ hasText: description });
 
 	await expect(row).toBeVisible();
 	await expect(row).toContainText("3.50 €");
