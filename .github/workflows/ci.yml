@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-client:
+    runs-on: ubuntu-latest
+    container: node:22
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Lint client
+        working-directory: client
+        run: npm run lint
+
+  lint-server:
+    runs-on: ubuntu-latest
+    container: node:22
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Lint server
+        working-directory: server
+        run: npm run lint
+
+  build-client:
+    runs-on: ubuntu-latest
+    container: node:22
+    needs:
+      - lint-client
+      - lint-server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+  build-server:
+    runs-on: ubuntu-latest
+    container: node:22
+    needs:
+      - lint-client
+      - lint-server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Build server
+        working-directory: server
+        run: npm run build
+
+  test-server:
+    runs-on: ubuntu-latest
+    container: node:22
+    needs:
+      - build-client
+      - build-server
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_pw
+          POSTGRES_DB: app_test_db
+        options: >-
+          --health-cmd="pg_isready -U app -d app_test_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: app
+      PGPASSWORD: app_pw
+      PGDATABASE: app_test_db
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: apt-get update && apt-get install -y postgresql-client
+
+      - name: Load database schema
+        run: psql -h postgres -U app -d app_test_db -f db/init/001-schema.sql
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run server tests
+        working-directory: server
+        run: npm test
